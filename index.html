@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UPS KG Monthly Baseline Tracker — Live Interface</title>
+<style>
+:root{
+  --bg:#f4f2f8;
+  --card:#ffffff;
+  --line:#e6dfef;
+  --text:#2f2640;
+  --muted:#746b82;
+  --primary:#5b338f;
+  --primary-2:#7b57aa;
+  --soft:#f1ecf8;
+  --danger:#b63c53;
+  --r1:#fde9ec;
+  --r2:#fff6db;
+  --r3:#eaf8ee;
+  --r4:#e3f4ff;
+  --shadow:0 10px 30px rgba(44,21,73,.07);
+  --radius:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,Segoe UI,Arial,sans-serif}
+a{color:var(--primary)}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.header{background:linear-gradient(135deg,#362063,#7049a4);color:#fff;padding:26px 26px 24px;box-shadow:var(--shadow)}
+.header-inner{max-width:1600px;margin:0 auto;display:flex;justify-content:space-between;gap:16px;align-items:flex-end;flex-wrap:wrap}
+.header h1{margin:0 0 6px;font-size:28px;line-height:1.1}
+.header p{margin:0;color:#e7def6}
+.badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.18);padding:8px 12px;border-radius:999px;font-weight:600}
+main{max-width:1600px;margin:0 auto;padding:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px}
+.hidden{display:none !important}
+.row{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:.02em}
+input,select{width:100%;min-height:42px;border:1px solid #d8cfE5;border-radius:10px;padding:10px 12px;background:#fff;color:var(--text)}
+button{border:0;border-radius:10px;padding:11px 16px;background:var(--primary);color:#fff;font-weight:600;box-shadow:0 6px 15px rgba(91,51,143,.18)}
+button.secondary{background:#ece4f8;color:#442b6f;box-shadow:none}
+button.ghost{background:#fff;color:var(--primary);border:1px solid #d8cdea;box-shadow:none}
+button.danger{background:#fbe8ec;color:#90263a;box-shadow:none}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #9a76d1;outline-offset:2px}
+.grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.login-panel{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.info-panel{background:linear-gradient(180deg,#f6f2fc,#ffffff);border:1px solid #ebe2f6;border-radius:16px;padding:16px}
+.info-panel h3{margin:0 0 10px}
+.inline-pills,.chips{display:flex;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:#ede6f7;color:#4b2d7c;font-weight:700;font-size:12px}
+.section-title{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.section-title h2{margin:0;font-size:20px}
+.toolbar{display:grid;grid-template-columns:repeat(6,minmax(140px,1fr));gap:12px;align-items:end}
+.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px}
+.stat{background:linear-gradient(180deg,#faf8fd,#f2edf8);border:1px solid #ede6f3;border-radius:14px;padding:14px}
+.stat .top{font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:700;letter-spacing:.02em}
+.stat .big{font-size:26px;font-weight:800;line-height:1.1;margin-bottom:4px}
+.progress{height:9px;background:#ece5f5;border-radius:999px;overflow:hidden;margin-top:7px}
+.progress span{display:block;height:100%;background:linear-gradient(90deg,#7754a7,#9d7cc8)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+.swatch{width:16px;height:16px;border-radius:5px;border:1px solid rgba(0,0,0,.06)}
+.domain-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.domain-btn{padding:8px 12px;border-radius:999px;border:1px solid #ded4eb;background:#fff;color:#4a386c;font-weight:700;box-shadow:none}
+.domain-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.table-tools{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:14px}
+.tablewrap{border:1px solid var(--line);border-radius:14px;overflow:auto;max-height:610px;background:#fff}
+.tablewrap table{border-collapse:separate;border-spacing:0;min-width:1980px;font-size:12px}
+.tablewrap th,.tablewrap td{padding:6px;border-right:1px solid #ebe4f1;border-bottom:1px solid #ebe4f1;text-align:center;vertical-align:middle}
+.tablewrap thead th{position:sticky;top:0;background:#f4eefb;z-index:4}
+.tablewrap thead tr:first-child th{height:42px;font-size:12px}
+.tablewrap thead tr:nth-child(2) th{top:42px;height:96px;vertical-align:bottom}
+.tablewrap .student-col{position:sticky;left:0;z-index:5;background:#fff;text-align:left;min-width:240px;max-width:240px;padding:10px 12px;font-weight:600}
+.tablewrap tbody tr:nth-child(even) td{background:#fbf9fd}
+.tablewrap tbody tr:nth-child(even) .student-col{background:#fbf9fd}
+.tablewrap .mean-col{min-width:90px;max-width:90px;background:#efe8f9 !important;font-weight:800}
+.tablewrap .domain-head{background:linear-gradient(180deg,#69479d,#553582);color:#fff;font-size:12px}
+.indicator-code{display:block;font-weight:800;color:#4f3279;margin-bottom:6px}
+.indicator-caption{display:block;writing-mode:vertical-rl;transform:rotate(180deg);height:64px;margin:0 auto;font-weight:500;line-height:1.05}
+.score-select{min-width:56px;max-width:62px;min-height:34px;padding:5px;text-align:center;font-weight:700}
+.score-select.r0{background:#fff}
+.score-select.r1{background:var(--r1)}
+.score-select.r2{background:var(--r2)}
+.score-select.r3{background:var(--r3)}
+.score-select.r4{background:var(--r4)}
+.aux-note{background:#f8f5fc;border:1px solid #ece4f7;border-radius:12px;padding:12px;margin-top:12px}
+.report-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
+.chart-card{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff}
+.chart-card h3{margin:0 0 10px;font-size:16px}
+.chart-card svg{width:100%;height:250px;display:block}
+.student-report{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px}
+.mini-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:12px}
+.mini-table th,.mini-table td{padding:10px 12px;border-bottom:1px solid #eee7f2;text-align:left}
+.mini-table th{background:#f6f1fb;color:#4a376e;font-size:12px;letter-spacing:.02em}
+.mini-table tr:last-child td{border-bottom:0}
+.kicker{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8d83a1;font-weight:800}
+.admin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.footer-note{font-size:12px;color:var(--muted)}
+.error{color:#a12541;font-weight:600;margin-top:10px}
+@media (max-width:1200px){
+  .toolbar{grid-template-columns:repeat(3,minmax(150px,1fr))}
+  .grid-2,.report-grid,.student-report,.login-panel{grid-template-columns:1fr}
+  .stat-grid,.grid-4,.admin-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:760px){
+  main{padding:14px}
+  .header{padding:20px 16px}
+  .header h1{font-size:22px}
+  .toolbar,.stat-grid,.grid-4,.admin-grid{grid-template-columns:1fr}
+  .tablewrap .student-col{min-width:185px;max-width:185px}
+}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <div>
+      <h1>UPS KG Monthly Baseline Tracker</h1>
+      <p>Live school tracker · Monthly developmental assessment and reporting</p>
+    </div>
+    <div class="badge">Academic Year 2026–2027</div>
+  </div>
+</header>
+
+<main>
+  <section id="login" class="card">
+    <div class="login-panel">
+      <div>
+        <div class="kicker">Access</div>
+        <h2 style="margin:6px 0 10px">School staff sign in</h2>
+        <p class="muted">Enter your registered email. A one-time email code verifies access to real student records. No password is required.</p>
+        <form id="loginform">
+          <label class="label" for="email">Registered staff email</label>
+          <input id="email" type="email" placeholder="teacher@school.com" required>
+          <div id="otpWrap" class="hidden" style="margin-top:12px"><label class="label" for="otp">Email verification code</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter emailed code"></div>
+          <div class="row" style="justify-content:flex-start;margin-top:14px">
+            <button type="submit" id="loginButton">Email me a code</button>
+          </div>
+        </form>
+        <div id="error" class="error"></div>
+      </div>
+      <div class="info-panel">
+        <h3>Authorized school staff</h3>
+        <div class="inline-pills">
+          <span class="pill">KG1 Camel · Ms. Gisel Santiago</span>
+          <span class="pill">KG2 Oryx · Ms. Regina Vera Oracion</span>
+          <span class="pill">KG2 Falcon · Ms. Lee Ann Sison</span>
+          <span class="pill">Super Admin · Mr. Joshua Rey Aguinado</span>
+        </div>
+        <div class="aux-note" style="margin-top:14px">
+          <strong>Live tracker features</strong>
+          <ul style="margin:8px 0 0 18px;padding:0">
+            <li>Cleaner professional layout and clearer reporting sections</li>
+            <li>Color-coded rating cells for quicker visual checking</li>
+            <li>Domain filters for easier scoring and review</li>
+            <li>Class and individual graphs with summary cards</li>
+            <li>Export CSV and Print Report actions for demo reporting</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="app" class="hidden">
+    <section class="card">
+      <div class="row">
+        <div>
+          <div class="kicker">Current user</div>
+          <h2 id="staffName" style="margin:6px 0 4px"></h2>
+          <div class="chips"><span id="userRole" class="pill"></span></div>
+        </div>
+        <div class="row" style="gap:10px">
+          <button id="printBtn" class="ghost">Print report</button>
+          <button id="logout" class="secondary">Sign out</button>
+        </div>
+      </div>
+      <div class="aux-note">
+        <strong>Demonstration notice:</strong> Learner names in this demo are synthetic placeholders. Scores are saved to Supabase. Your access is restricted by your assigned class and role.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>1. Whole-class assessment entry</h2>
+        <span class="pill">Rows = students · Columns = indicators</span>
+      </div>
+      <p class="muted">Teachers can enter ratings directly into the class grid. Use the domain filters to focus on one developmental domain at a time or view all 30 indicators together.</p>
+      <div class="toolbar">
+        <div>
+          <label class="label" for="section">Class</label>
+          <select id="section"></select>
+        </div>
+        <div>
+          <label class="label" for="month">Assessment month</label>
+          <select id="month"></select>
+        </div>
+        <div>
+          <label class="label" for="studentSelect">Student report selector</label>
+          <select id="studentSelect"></select>
+        </div>
+        <div>
+          <label class="label">Assessment control</label>
+          <button id="clear" class="danger" style="width:100%">Clear month (demo only)</button>
+        </div>
+        <div>
+          <label class="label">Export scores</label>
+          <button id="exportGrid" class="ghost" style="width:100%">Export table CSV</button>
+        </div>
+        <div>
+          <label class="label">Export class summary</label>
+          <button id="exportSummary" class="ghost" style="width:100%">Export summary CSV</button>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:#fff"></span> Blank / Not yet observed</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--r1)"></span> 1 · Beginning</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--r2)"></span> 2 · Developing</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--r3)"></span> 3 · Meeting</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--r4)"></span> 4 · Extending</span>
+      </div>
+
+      <div class="domain-tabs" id="domainTabs"></div>
+
+      <div class="table-tools">
+        <div class="small muted">Tip: Scroll horizontally for more indicators. Student names and monthly means remain visible while scrolling.</div>
+        <div class="row" style="gap:8px">
+          <span class="pill" id="visibleIndicators">Showing 30 indicators</span>
+          <span class="pill" id="saveState" aria-live="polite">Ready</span>
+        </div>
+      </div>
+
+      <div class="tablewrap" style="margin-top:12px">
+        <table id="scores">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>2. Monthly class report</h2>
+        <span class="pill">Automatic summary</span>
+      </div>
+      <p class="muted">The report below updates instantly from the assessment grid. Values are descriptive summaries of developmental ratings and should be interpreted alongside observation evidence.</p>
+      <div class="stat-grid" id="statrow"></div><div class="row" style="margin:14px 0"><button id="submitAll" type="button">Submit class assessments for review</button><span id="submitMsg" class="muted small"></span></div>
+      <div class="report-grid" style="margin-top:14px">
+        <div class="chart-card">
+          <h3>Class monthly rating trend</h3>
+          <div id="classchart"></div>
+          <div class="footer-note">Average of observed ratings only. Missing evidence does not count as zero.</div>
+        </div>
+        <div class="chart-card">
+          <h3>Domain means — selected month</h3>
+          <div id="domainchart"></div>
+          <div class="footer-note">One average per developmental domain for the selected month.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>3. Individual student report</h2>
+        <span class="pill">Teacher-friendly review</span>
+      </div>
+      <div class="student-report">
+        <div>
+          <div class="stat" id="studentStats"></div>
+          <table class="mini-table" id="studentDomainTable"></table>
+        </div>
+        <div class="chart-card">
+          <h3>Student developmental trend</h3>
+          <div id="studentchart"></div>
+          <div class="footer-note">Shows the student’s mean observed developmental rating by month.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="admin" class="card hidden">
+      <div class="section-title">
+        <h2>4. Super Admin overview</h2>
+        <span class="pill">Cross-class snapshot</span>
+      </div>
+      <div class="admin-grid" id="adminsummary"></div>
+      <p class="footer-note" style="margin-top:12px">This view summarizes currently loaded school records. Only authorized staff can access student data.</p>
+    </section>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+'use strict';
+const URL_KG='https://rozrmwjjiloywuecwgps.supabase.co';
+const KEY_KG='sb_publishable_7mCe76UdAGXiM9smW-HwxA_q7LrcLjF';
+const db=window.supabase?.createClient(URL_KG, KEY_KG,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const $=id=>document.getElementById(id);
+const domains=[
+ {short:'Language',name:'Literacy, Language and Communication'},
+ {short:'Social-Emotional',name:'Socio-Emotional Development'},
+ {short:'Values',name:'Values Development'},
+ {short:'Physical',name:'Physical Health and Motor Development'},
+ {short:'Creative',name:'Aesthetic and Creative Development'},
+ {short:'Cognitive',name:'Cognitive Development'}
+];
+const sampleNames={'KG1 Camel':'','KG2 Oryx':'','KG2 Falcon':''};
+let user=null,profile=null,sections=[],periods=[],students=[],indicators=[],assessments={},ratings={},activeDomain='all',currentSection=null,loadToken=0;
+const clean=x=>String(x??'');
+const esc=x=>clean(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const av=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const fmt=(n,d=2)=>n==null||Number.isNaN(n)?'—':Number(n).toFixed(d);
+const pct=n=>n==null?'—':fmt(n,1)+'%';
+const status=(message,error=false)=>{ $('saveState').textContent=message; $('saveState').style.color=error?'#a12541':''; };
+const check=({data,error})=>{if(error)throw error;return data;};
+const setopts=(el,rows,label,value)=>{el.replaceChildren();rows.forEach(r=>el.add(new Option(label(r),value(r))));};
+const periodId=()=>$('month').value;
+const per=()=>periods.find(x=>x.id===periodId());
+const cellKey=(studentId,pId,indicatorId)=>studentId+'|'+pId+'|'+indicatorId;
+const getVal=(studentId,pId,indicatorId)=>ratings[cellKey(studentId,pId,indicatorId)]?.rating??null;
+const currentIndicators=()=>indicators.filter(i=>activeDomain==='all'||String(i.domain_id)===activeDomain);
+function valuesFor(studentId,pId){return indicators.map(i=>getVal(studentId,pId,i.id)).filter(x=>x!=null);}
+function sectionData(pId){let nums=[],rated=0,met=0,byD=domains.map(()=>[]);students.forEach(s=>indicators.forEach(i=>{const v=getVal(s.id,pId,i.id);if(v!=null){nums.push(v);rated++;if(v>=3)met++;byD[i.domain_id-1].push(v);}}));return{count:students.length,rated,coverage:students.length*indicators.length?100*rated/(students.length*indicators.length):null,mean:av(nums),meetingPct:rated?100*met/rated:null,byDomain:byD.map(av)}}
+async function login(e){e.preventDefault();if(!db){$('error').textContent='Supabase library could not load. Check your internet connection.';return;}
+const email=$('email').value.trim().toLowerCase();const allowedEmails=['giselsantiagoupsteacher@gmail.com','reginaoracion.upsteacher@gmail.com','leeannsisonupstecher@gmail.com','joshua.aguinaldo.upsteacher@gmail.com'];if(!allowedEmails.includes(email)){$('error').textContent='This email is not authorized for the KG tracker.';return;}$('error').textContent='';$('loginButton').disabled=true;
+try{if($('otpWrap').classList.contains('hidden')){
+ await check(await db.auth.signInWithOtp({email,options:{shouldCreateUser:false}}));
+ $('otpWrap').classList.remove('hidden');$('loginButton').textContent='Verify and open tracker';$('error').textContent='Code requested. Check your email; mail delivery must be configured for the school accounts.';
+ }else{await check(await db.auth.verifyOtp({email,token:$('otp').value.trim(),type:'email'}));await bootstrap();}
+}catch(err){$('error').textContent=err.message||'Sign-in failed';}finally{$('loginButton').disabled=false;}}
+async function bootstrap(){if(!db)return; const {data:{user:u}}=await db.auth.getUser();if(!u)return;
+try{
+ const p=check(await db.from('kg_staff').select('user_id,email,display_name,role,active').eq('user_id',u.id).maybeSingle());
+ if(!p||!p.active)throw new Error('This email is not approved for the KG tracker. Contact the administrator.');
+ user=u;profile=p;
+ const allSections=check(await db.from('kg_sections').select('id,level,name,academic_year_id').order('level').order('name'));
+ sections=allSections;
+ if(!sections.length)throw new Error('No assigned KG sections were found.');
+ periods=check(await db.from('kg_assessment_periods').select('id,label,kind,month_start,status,academic_year_id').order('starts_on'));
+ $('login').classList.add('hidden');$('app').classList.remove('hidden');$('staffName').textContent=profile.display_name;
+ $('userRole').textContent=profile.role==='super_admin'?'Super Admin · All KG Sections':profile.role==='supervisor'?'Supervisor · All KG Sections':'Teacher · Assigned KG Section';
+ setopts($('section'),sections,s=>s.level+' '+s.name,s=>s.id);
+ $('admin').classList.toggle('hidden',profile.role==='teacher');
+ $('clear').disabled=true;
+ await loadSection();
+}catch(err){$('error').textContent=err.message||String(err);$('app').classList.add('hidden');$('login').classList.remove('hidden');}}
+async function loadSection(){const token=++loadToken,statusId=$('section').value; currentSection=sections.find(s=>s.id===statusId);if(!currentSection)return;
+status('Loading class...');try{
+ const [enrollRows,indRows]=await Promise.all([
+ db.from('kg_enrollments').select('id,student_id,kg_students(id,full_name)').eq('section_id',statusId).eq('active',true),
+ db.from('kg_indicators').select('id,code,title,domain_id,display_order,level').eq('level',currentSection.level).order('domain_id').order('display_order')]);
+ const ens=check(enrollRows), inds=check(indRows);
+ if(token!==loadToken)return;
+ students=ens.map(e=>({id:e.student_id,enrollment_id:e.id,name:e.kg_students?.full_name||'Unnamed learner'})).sort((a,b)=>a.name.localeCompare(b.name));indicators=inds;
+ const compatible=periods.filter(x=>x.academic_year_id===currentSection.academic_year_id);
+ setopts($('month'),compatible,x=>(x.kind==='baseline'?'Initial Baseline':x.label)+' · '+x.status,x=>x.id);
+ const open=compatible.find(x=>x.kind==='monthly'&&x.status==='open')||compatible.find(x=>x.status==='open');if(open)$('month').value=open.id;
+ setopts($('studentSelect'),students,s=>s.name,s=>s.id);
+ assessments={};ratings={};
+ const eids=students.map(s=>s.enrollment_id);
+ if(eids.length){const asses=check(await db.from('kg_assessments').select('id,enrollment_id,period_id,status').in('enrollment_id',eids));
+ if(token!==loadToken)return;
+ asses.forEach(a=>assessments[a.enrollment_id+'|'+a.period_id]=a);
+ const aids=asses.map(a=>a.id);if(aids.length){const rr=check(await db.from('kg_ratings').select('id,assessment_id,indicator_id,rating').in('assessment_id',aids)); const map=new Map(asses.map(a=>[a.id,a]));rr.filter(r=>map.has(r.assessment_id)).forEach(r=>{const a=map.get(r.assessment_id);const s=students.find(s=>s.enrollment_id===a.enrollment_id);if(s)ratings[cellKey(s.id,a.period_id,r.indicator_id)]=r;});}}
+ status('Live data loaded');activeDomain='all';render();
+ }catch(err){status(err.message||String(err),true);}}
+function buildTabs(){const tabs=$('domainTabs');tabs.replaceChildren();const definitions=[['all','All 30 indicators'],...domains.map((d,i)=>[String(i+1),d.short])];definitions.forEach(([id,label])=>{const b=document.createElement('button');b.className='domain-btn '+(activeDomain===id?'active':'');b.textContent=label;b.onclick=()=>{activeDomain=id;render();};tabs.append(b);});}
+function renderTable(){const cols=currentIndicators(),pId=periodId(),p=per();$('visibleIndicators').textContent='Showing '+cols.length+' indicators';const editable=p?.status==='open';
+const head=$('scores').tHead,body=$('scores').tBodies[0];head.replaceChildren();body.replaceChildren();const top=document.createElement('tr'),sub=document.createElement('tr');
+const th=document.createElement('th');th.rowSpan=2;th.className='student-col';th.textContent='Student name';top.append(th);
+for(let d=1;d<=6;d++){const n=cols.filter(c=>c.domain_id===d).length;if(!n)continue;const h=document.createElement('th');h.className='domain-head';h.colSpan=n;h.textContent=domains[d-1].name;top.append(h);}
+for(const ind of cols){const h=document.createElement('th');const code=document.createElement('span'),name=document.createElement('span');code.className='indicator-code';code.textContent=ind.code;name.className='indicator-caption';name.textContent=ind.title;h.title=ind.title;h.append(code,name);sub.append(h);}
+const end=document.createElement('th');end.rowSpan=2;end.className='mean-col';end.textContent='Monthly mean';top.append(end);head.append(top,sub);
+students.forEach(st=>{const tr=document.createElement('tr'),name=document.createElement('td');name.className='student-col';name.textContent=st.name;tr.append(name);
+const a=assessments[st.enrollment_id+'|'+pId];cols.forEach(ind=>{const td=document.createElement('td'),sel=document.createElement('select');sel.className='score-select r'+(getVal(st.id,pId,ind.id)||0);sel.setAttribute('aria-label',st.name+' · '+ind.title);sel.add(new Option('—',''));[1,2,3,4].forEach(v=>sel.add(new Option(String(v),String(v))));sel.value=String(getVal(st.id,pId,ind.id)??'');sel.disabled=!editable||(!!a&&a.status!=='draft');sel.onchange=async()=>{sel.disabled=true;const val=sel.value;try{await saveRating(st,ind,val);sel.className='score-select r'+(val||0);updateMean(tr,st,pId);renderReports();status('Saved');}catch(err){sel.value=String(getVal(st.id,pId,ind.id)??'');status(err.message||String(err),true);}finally{sel.disabled=!editable||(!!assessments[st.enrollment_id+'|'+pId]&&assessments[st.enrollment_id+'|'+pId].status!=='draft');}};td.append(sel);tr.append(td);});const avgtd=document.createElement('td');avgtd.className='mean-col';avgtd.dataset.mean='true';tr.append(avgtd);body.append(tr);updateMean(tr,st,pId);});}
+function updateMean(row,st,pId){row.querySelector('[data-mean]').textContent=fmt(av(valuesFor(st.id,pId)));}
+async function saveRating(st,ind,value){const p=per();if(p?.status!=='open')throw Error('This period is not open for scoring.');let a=assessments[st.enrollment_id+'|'+p.id];
+ if(value==='')throw Error('To mark a skill as unobserved after saving, a blank rating would require a separate clear action. Please use the appropriate score or contact the supervisor.');
+ if(!a){a=check(await db.from('kg_assessments').insert({enrollment_id:st.enrollment_id,period_id:p.id,created_by:user.id,status:'draft'}).select('id,enrollment_id,period_id,status').single());assessments[st.enrollment_id+'|'+p.id]=a;}
+ if(a.status!=='draft')throw Error('Assessment was submitted; ask a supervisor to reopen it.');
+ const key=cellKey(st.id,p.id,ind.id),old=ratings[key],v=value===''?null:Number(value);
+ if(old){const updated=check(await db.from('kg_ratings').update({rating:v,updated_by:user.id,observed_on:new Date().toISOString().slice(0,10)}).eq('id',old.id).select('id,assessment_id,indicator_id,rating').single());ratings[key]=updated;}
+ else {const added=check(await db.from('kg_ratings').insert({assessment_id:a.id,indicator_id:ind.id,rating:v,updated_by:user.id,observed_on:new Date().toISOString().slice(0,10)}).select('id,assessment_id,indicator_id,rating').single());ratings[key]=added;}
+}
+function svgLine(points,labels){const W=640,H=250,L=48,R=14,T=16,B=46;const x=i=>L+(W-L-R)*(labels.length===1?.5:i/(labels.length-1));const y=v=>H-B-(v-1)*(H-T-B)/3;let lines=[1,2,3,4].map(n=>`<line x1="${L}" x2="${W-R}" y1="${y(n)}" y2="${y(n)}" stroke="#ebe4f2"/><text x="${L-12}" y="${y(n)+4}" fill="#746b82" font-size="12" text-anchor="end">${n}</text>`).join('');let segments=[],path='';points.forEach((v,i)=>{if(v==null){if(path)segments.push(path);path='';return;}path+=(path?' L':'M')+x(i)+','+y(v);});if(path)segments.push(path);let dots=points.map((v,i)=>v==null?'':`<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="#6f49a0"><title>${esc(labels[i])}: ${fmt(v)}</title></circle>`).join('');let captions=labels.map((v,i)=>`<text x="${x(i)}" y="${H-24}" text-anchor="middle" font-size="10" fill="#746b82">${esc(v)}</text>`).join('');return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly developmental trend">${lines}${segments.map(s=>`<path d="${s}" fill="none" stroke="#6f49a0" stroke-width="3"/>`).join('')}${dots}${captions}</svg>`;}
+function svgBars(values){const W=640,H=250,L=45,R=15,T=15,B=68;const gap=(W-L-R)/6;const y=v=>H-B-(v-1)*(H-T-B)/3;return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Domain averages">${[1,2,3,4].map(n=>`<line x1="${L}" x2="${W-R}" y1="${y(n)}" y2="${y(n)}" stroke="#eee8f4"/><text x="${L-13}" y="${y(n)+4}" font-size="12" fill="#746b82">${n}</text>`).join('')}${values.map((v,i)=>{const x=L+gap*i+gap*.2;return `<rect x="${x}" y="${v==null?H-B:y(v)}" width="${gap*.6}" height="${v==null?0:H-B-y(v)}" rx="3" fill="#7b58aa"/><text x="${x+gap*.3}" y="${H-44}" font-size="10" text-anchor="middle" fill="#746b82">${esc(domains[i].short.split('-')[0])}</text><text x="${x+gap*.3}" y="${v==null?H-B-5:y(v)-6}" font-size="11" text-anchor="middle">${fmt(v,1)}</text>`}).join('')}</svg>`;}
+function renderReports(){const pId=periodId();if(!pId)return;const d=sectionData(pId);$('statrow').innerHTML=`<div class="stat"><div class="top">Enrolled learners</div><div class="big">${d.count}</div></div><div class="stat"><div class="top">Ratings recorded</div><div class="big">${d.rated}</div><div class="small muted">of ${d.count*indicators.length}</div></div><div class="stat"><div class="top">Evidence coverage</div><div class="big">${pct(d.coverage)}</div></div><div class="stat"><div class="top">Observed rating mean</div><div class="big">${fmt(d.mean)}</div></div><div class="stat"><div class="top">Meeting / Extending</div><div class="big">${pct(d.meetingPct)}</div></div>`;
+const ps=periods.filter(x=>x.academic_year_id===currentSection.academic_year_id);$('classchart').innerHTML=svgLine(ps.map(p=>sectionData(p.id).mean),ps.map(p=>p.kind==='baseline'?'Base':p.label.slice(5)));$('domainchart').innerHTML=svgBars(d.byDomain);renderStudent();renderAdmin();}
+function renderStudent(){const sid=$('studentSelect').value,pId=periodId();if(!sid||!pId)return;const s=students.find(x=>x.id===sid);if(!s)return;const vals=valuesFor(sid,pId),byD=domains.map((_,i)=>indicators.filter(x=>x.domain_id===i+1).map(x=>getVal(sid,pId,x.id)).filter(x=>x!=null));$('studentStats').innerHTML=`<div class="top">Selected learner</div><div class="big" style="font-size:19px">${esc(s.name)}</div><p>${esc(per()?.label)}</p><p><b>Observed:</b> ${vals.length}/${indicators.length}</p><p><b>Rating mean:</b> ${fmt(av(vals))}</p><p><b>Meeting / Extending:</b> ${pct(vals.length?100*vals.filter(v=>v>=3).length/vals.length:null)}</p>`;
+const ps=periods.filter(x=>x.academic_year_id===currentSection.academic_year_id);$('studentchart').innerHTML=svgLine(ps.map(p=>av(valuesFor(sid,p.id))),ps.map(p=>p.kind==='baseline'?'Base':p.label.slice(5)));$('studentDomainTable').innerHTML='<thead><tr><th>Domain</th><th>Observed</th><th>Mean</th></tr></thead><tbody>'+byD.map((nums,i)=>`<tr><td>${esc(domains[i].name)}</td><td>${nums.length}/5</td><td>${fmt(av(nums))}</td></tr>`).join('')+'</tbody>';}
+async function renderAdmin(){if(profile?.role==='teacher')return;try{const rows=check(await db.from('kg_monthly_class_status').select('section_id,level,section_name,period_id,enrolled_count,assessed_submitted_count,approved_count').eq('period_id',periodId()));$('adminsummary').innerHTML=rows.map(x=>`<div class="stat"><div class="top">${esc(x.level+' '+x.section_name)}</div><div class="big">${x.enrolled_count}</div><div class="small">Submitted: ${x.assessed_submitted_count} · Approved: ${x.approved_count}</div></div>`).join('');}catch(err){$('adminsummary').textContent='Monitoring unavailable: '+err.message;}}
+function render(){buildTabs();renderTable();renderReports();$('submitAll').disabled=per()?.status!=='open';}
+function downloadCsv(filename,rows){const csv=rows.map(r=>r.map(v=>{let s=String(v??'');if(/^[=+@-]/.test(s))s="'"+s;return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function exportGrid(){if(!currentSection)return;const pId=periodId(),hdr=['Learner',...indicators.map(i=>i.code+' '+i.title),'Monthly mean'];const rows=[hdr,...students.map(s=>[s.name,...indicators.map(i=>getVal(s.id,pId,i.id)??''),fmt(av(valuesFor(s.id,pId)))])];downloadCsv('UPS_KG_'+currentSection.level+'_'+currentSection.name+'_'+(per()?.label||'month')+'_scores.csv',rows);}
+function exportSummary(){const d=sectionData(periodId());downloadCsv('UPS_KG_'+currentSection.level+'_'+currentSection.name+'_'+(per()?.label||'month')+'_summary.csv',[['Class',currentSection.level+' '+currentSection.name],['Period',per()?.label],['Learners',d.count],['Ratings',d.rated],['Coverage %',fmt(d.coverage)],['Observed mean',fmt(d.mean)],['Meeting/Extending %',fmt(d.meetingPct)],[],['Domain','Mean'],...domains.map((dom,i)=>[dom.name,fmt(d.byDomain[i])])]);}
+async function submitClass(){if(!confirm('Submit all draft student assessments for this month? Teachers will not be able to edit them after submission.'))return;const pId=periodId();let count=0;try{for(const st of students){const a=assessments[st.enrollment_id+'|'+pId];if(a?.status!=='draft')continue;const next=check(await db.from('kg_assessments').update({status:'submitted',submitted_at:new Date().toISOString()}).eq('id',a.id).select('id,status,enrollment_id,period_id').single());assessments[st.enrollment_id+'|'+pId]=next;count++;}$('submitMsg').textContent=count+' assessments submitted.';render();}catch(err){$('submitMsg').textContent='Submission stopped: '+err.message;}}
+$('loginform').addEventListener('submit',login);$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('section').onchange=loadSection;$('month').onchange=render;$('studentSelect').onchange=renderStudent;$('exportGrid').onclick=exportGrid;$('exportSummary').onclick=exportSummary;$('printBtn').onclick=()=>window.print();$('submitAll').onclick=submitClass;
+if(db)db.auth.getSession().then(({data})=>{if(data.session)bootstrap();}).catch(e=>$('error').textContent=e.message);
+</script>
+</body></html>
