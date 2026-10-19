@@ -368,7 +368,7 @@ try{
 
  await loadSection();
 }catch(err){$('error').textContent=err.message||String(err);$('app').classList.add('hidden');$('login').classList.remove('hidden');}}
-async function loadSection(){const token=++loadToken,statusId=$('section').value; currentSection=sections.find(s=>s.id===statusId);if(!currentSection)return;
+async function loadSection(){const previousPeriod=$('month').value,previousStudent=$('studentSelect').value;const token=++loadToken,statusId=$('section').value; currentSection=sections.find(s=>s.id===statusId);if(!currentSection)return;
 status('Loading class...');try{
  const [enrollRows,indRows]=await Promise.all([
  db.from('kg_enrollments').select('id,student_id,kg_students(id,full_name)').eq('section_id',statusId).eq('active',true),
@@ -378,8 +378,8 @@ status('Loading class...');try{
  students=ens.map(e=>({id:e.student_id,enrollment_id:e.id,name:e.kg_students?.full_name||'Unnamed learner'})).sort((a,b)=>a.name.localeCompare(b.name));indicators=inds;
  const compatible=periods.filter(x=>x.academic_year_id===currentSection.academic_year_id);
  setopts($('month'),compatible,x=>(x.kind==='baseline'?'Initial Baseline':x.label)+' · '+x.status,x=>x.id);
- const open=compatible.find(x=>x.kind==='monthly'&&x.status==='open')||compatible.find(x=>x.status==='open');if(open)$('month').value=open.id;
- setopts($('studentSelect'),students,s=>s.name,s=>s.id);
+ const open=compatible.find(x=>x.kind==='monthly'&&x.status==='open')||compatible.find(x=>x.status==='open');if(compatible.some(x=>x.id===previousPeriod))$('month').value=previousPeriod;else if(open)$('month').value=open.id;
+ setopts($('studentSelect'),students,s=>s.name,s=>s.id);if(students.some(x=>x.id===previousStudent))$('studentSelect').value=previousStudent;
  assessments={};ratings={};
  const eids=students.map(s=>s.enrollment_id);
  if(eids.length){const asses=check(await db.from('kg_assessments').select('id,enrollment_id,period_id,status').in('enrollment_id',eids));
