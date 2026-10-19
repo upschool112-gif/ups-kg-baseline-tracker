@@ -209,20 +209,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
           <select id="month"></select>
         </div>
         <div>
-          <label class="label" for="studentSelect">Student report selector</label>
-          <select id="studentSelect"></select>
-        </div>
-        <div>
           <label class="label">Assessment control</label>
           <button id="refreshScores" class="ghost" style="width:100%">Reload saved ratings</button>
         </div>
         <div>
           <label class="label">Export scores</label>
           <button id="exportGrid" class="ghost" style="width:100%">Export table CSV</button>
-        </div>
-        <div>
-          <label class="label">Export class summary</label>
-          <button id="exportSummary" class="ghost" style="width:100%">Export summary CSV</button>
         </div>
       </div>
 
@@ -258,6 +250,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
         <span class="pill">Automatic summary</span>
       </div>
       <p class="muted">The report below updates instantly from the assessment grid. Values are descriptive summaries of developmental ratings and should be interpreted alongside observation evidence.</p>
+      <div class="row" style="align-items:flex-end;margin:12px 0 16px">
+        <div class="row" style="justify-content:flex-start;gap:12px;align-items:flex-end">
+          <div style="min-width:190px"><label class="label" for="classReportMonth">Reporting month</label><select id="classReportMonth" aria-label="Class reporting month"></select></div>
+          <div class="pill" id="classReportContext">Current class</div>
+        </div>
+        <button id="exportSummary" class="ghost" type="button">Export class summary CSV</button>
+      </div>
       <div class="stat-grid" id="statrow"></div><div class="row" style="margin:14px 0"><button id="submitAll" type="button">Submit class assessments for review</button><span id="submitMsg" class="muted small"></span></div>
       <div class="report-grid" style="margin-top:14px">
         <div class="chart-card">
@@ -277,6 +276,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
       <div class="section-title">
         <h2>3. Individual student report</h2>
         <span class="pill">Teacher-friendly review</span>
+      </div>
+      <div class="row" style="justify-content:flex-start;align-items:flex-end;margin:12px 0 18px;gap:12px">
+        <div style="min-width:270px;flex:1;max-width:460px"><label class="label" for="studentSelect">Select learner</label><select id="studentSelect"></select></div>
+        <div style="min-width:190px"><label class="label" for="studentReportMonth">Reporting month</label><select id="studentReportMonth"></select></div>
+        <div class="pill" id="studentReportContext">Current class</div>
       </div>
       <div class="student-report">
         <div>
@@ -378,6 +382,8 @@ status('Loading class...');try{
  students=ens.map(e=>({id:e.student_id,enrollment_id:e.id,name:e.kg_students?.full_name||'Unnamed learner'})).sort((a,b)=>a.name.localeCompare(b.name));indicators=inds;
  const compatible=periods.filter(x=>x.academic_year_id===currentSection.academic_year_id);
  setopts($('month'),compatible,x=>(x.kind==='baseline'?'Initial Baseline':x.label)+' · '+x.status,x=>x.id);
+ setopts($('classReportMonth'),compatible,x=>(x.kind==='baseline'?'Initial Baseline':x.label),x=>x.id);
+ setopts($('studentReportMonth'),compatible,x=>(x.kind==='baseline'?'Initial Baseline':x.label),x=>x.id);
  const open=compatible.find(x=>x.kind==='monthly'&&x.status==='open')||compatible.find(x=>x.status==='open');if(compatible.some(x=>x.id===previousPeriod))$('month').value=previousPeriod;else if(open)$('month').value=open.id;
  setopts($('studentSelect'),students,s=>s.name,s=>s.id);if(students.some(x=>x.id===previousStudent))$('studentSelect').value=previousStudent;
  assessments={};ratings={};
@@ -413,12 +419,12 @@ const ps=periods.filter(x=>x.academic_year_id===currentSection.academic_year_id)
 function renderStudent(){const sid=$('studentSelect').value,pId=periodId();if(!sid||!pId)return;const s=students.find(x=>x.id===sid);if(!s)return;const vals=valuesFor(sid,pId),byD=domains.map((_,i)=>indicators.filter(x=>x.domain_id===i+1).map(x=>getVal(sid,pId,x.id)).filter(x=>x!=null));$('studentStats').innerHTML=`<div class="top">Selected learner</div><div class="big" style="font-size:19px">${esc(s.name)}</div><p>${esc(per()?.label)}</p><p><b>Observed:</b> ${vals.length}/${indicators.length}</p><p><b>Rating mean:</b> ${fmt(av(vals))}</p><p><b>Meeting / Extending:</b> ${pct(vals.length?100*vals.filter(v=>v>=3).length/vals.length:null)}</p>`;
 const ps=periods.filter(x=>x.academic_year_id===currentSection.academic_year_id);$('studentchart').innerHTML=svgLine(ps.map(p=>av(valuesFor(sid,p.id))),ps.map(p=>p.kind==='baseline'?'Base':p.label.slice(5)));$('studentDomainTable').innerHTML='<thead><tr><th>Domain</th><th>Observed</th><th>Mean</th></tr></thead><tbody>'+byD.map((nums,i)=>`<tr><td>${esc(domains[i].name)}</td><td>${nums.length}/5</td><td>${fmt(av(nums))}</td></tr>`).join('')+'</tbody>';}
 async function renderAdmin(){if(profile?.role==='teacher')return;try{const rows=check(await db.from('kg_monthly_class_status').select('section_id,level,section_name,period_id,enrolled_count,assessed_submitted_count,approved_count').eq('period_id',periodId()));$('adminsummary').innerHTML=rows.map(x=>`<div class="stat"><div class="top">${esc(x.level+' '+x.section_name)}</div><div class="big">${x.enrolled_count}</div><div class="small">Submitted: ${x.assessed_submitted_count} · Approved: ${x.approved_count}</div></div>`).join('');}catch(err){$('adminsummary').textContent='Monitoring unavailable: '+err.message;}}
-function render(){buildTabs();renderTable();renderReports();$('submitAll').disabled=per()?.status!=='open';}
+function render(){buildTabs();renderTable();const selected=$('month').value; if($('classReportMonth').value!==selected)$('classReportMonth').value=selected;if($('studentReportMonth').value!==selected)$('studentReportMonth').value=selected;const label=currentSection?currentSection.level+' '+currentSection.name:'Current class';$('classReportContext').textContent=label;$('studentReportContext').textContent=label;renderReports();$('submitAll').disabled=per()?.status!=='open';}
 function downloadCsv(filename,rows){const csv=rows.map(r=>r.map(v=>{let s=String(v??'');if(/^[=+@-]/.test(s))s="'"+s;return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function exportGrid(){if(!currentSection)return;const pId=periodId(),hdr=['Learner',...indicators.map(i=>i.code+' '+i.title),'Monthly mean'];const rows=[hdr,...students.map(s=>[s.name,...indicators.map(i=>getVal(s.id,pId,i.id)??''),fmt(av(valuesFor(s.id,pId)))])];downloadCsv('UPS_KG_'+currentSection.level+'_'+currentSection.name+'_'+(per()?.label||'month')+'_scores.csv',rows);}
 function exportSummary(){const d=sectionData(periodId());downloadCsv('UPS_KG_'+currentSection.level+'_'+currentSection.name+'_'+(per()?.label||'month')+'_summary.csv',[['Class',currentSection.level+' '+currentSection.name],['Period',per()?.label],['Learners',d.count],['Ratings',d.rated],['Coverage %',fmt(d.coverage)],['Observed mean',fmt(d.mean)],['Meeting/Extending %',fmt(d.meetingPct)],[],['Domain','Mean'],...domains.map((dom,i)=>[dom.name,fmt(d.byDomain[i])])]);}
 async function submitClass(){if(!confirm('Submit all draft student assessments for this month? Teachers will not be able to edit them after submission.'))return;const pId=periodId();let count=0;try{for(const st of students){const a=assessments[st.enrollment_id+'|'+pId];if(a?.status!=='draft')continue;const next=check(await db.from('kg_assessments').update({status:'submitted',submitted_at:new Date().toISOString()}).eq('id',a.id).select('id,status,enrollment_id,period_id').single());assessments[st.enrollment_id+'|'+pId]=next;count++;}$('submitMsg').textContent=count+' assessments submitted.';render();}catch(err){$('submitMsg').textContent='Submission stopped: '+err.message;}}
-$('loginform').addEventListener('submit',login);$('changePasswordForm').addEventListener('submit',changeInitialPassword);$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('refreshScores').onclick=loadSection;$('section').onchange=loadSection;$('month').onchange=render;$('studentSelect').onchange=renderStudent;$('exportGrid').onclick=exportGrid;$('exportSummary').onclick=exportSummary;$('printBtn').onclick=()=>window.print();$('submitAll').onclick=submitClass;
+$('loginform').addEventListener('submit',login);$('changePasswordForm').addEventListener('submit',changeInitialPassword);$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('refreshScores').onclick=loadSection;$('section').onchange=loadSection;$('month').onchange=render;$('classReportMonth').onchange=()=>{$('month').value=$('classReportMonth').value;render();};$('studentReportMonth').onchange=()=>{$('month').value=$('studentReportMonth').value;render();};$('studentSelect').onchange=renderStudent;$('exportGrid').onclick=exportGrid;$('exportSummary').onclick=exportSummary;$('printBtn').onclick=()=>window.print();$('submitAll').onclick=submitClass;
 if(db)db.auth.getSession().then(({data})=>{if(data.session)bootstrap();}).catch(e=>$('error').textContent=e.message);
 </script>
 </body></html>
