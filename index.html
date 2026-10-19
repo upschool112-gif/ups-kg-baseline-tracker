@@ -133,13 +133,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
       <div>
         <div class="kicker">Access</div>
         <h2 style="margin:6px 0 10px">School staff sign in</h2>
-        <p class="muted">Enter your registered email. A one-time email code verifies access to real student records. No password is required.</p>
+        <p class="muted">Enter your registered email and password. You will be asked to set a new password when signing in for the first time.</p>
         <form id="loginform">
           <label class="label" for="email">Registered staff email</label>
           <input id="email" type="email" placeholder="teacher@school.com" required>
-          <div id="otpWrap" class="hidden" style="margin-top:12px"><label class="label" for="otp">Email verification code</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter emailed code"></div>
+          <div style="margin-top:12px"><label class="label" for="password">Password</label><input id="password" type="password" autocomplete="current-password" required minlength="4" placeholder="Enter your password"></div>
           <div class="row" style="justify-content:flex-start;margin-top:14px">
-            <button type="submit" id="loginButton">Email me a code</button>
+            <button type="submit" id="loginButton">Sign in</button>
           </div>
         </form>
         <div id="error" class="error"></div>
@@ -166,6 +166,15 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     </div>
   </section>
 
+  <section id="passwordChange" class="card hidden" style="max-width:620px;margin:0 auto 20px">
+    <h2>Set your personal password</h2><p class="muted">Before using the tracker, please replace your temporary password with one of your own. Minimum 4 characters. For better protection, use 8 or more and do not reuse the temporary password.</p>
+    <form id="changePasswordForm">
+      <label class="label" for="newPassword">New password</label><input type="password" id="newPassword" autocomplete="new-password" minlength="4" required>
+      <label class="label" for="confirmPassword" style="margin-top:12px">Confirm new password</label><input type="password" id="confirmPassword" autocomplete="new-password" minlength="4" required>
+      <div style="margin-top:14px"><button type="submit" id="changePasswordButton">Change password and continue</button></div>
+    </form>
+    <p id="passwordChangeError" class="error" role="alert"></p>
+  </section>
   <section id="app" class="hidden">
     <section class="card">
       <div class="row">
@@ -326,17 +335,28 @@ const currentIndicators=()=>indicators.filter(i=>activeDomain==='all'||String(i.
 function valuesFor(studentId,pId){return indicators.map(i=>getVal(studentId,pId,i.id)).filter(x=>x!=null);}
 function sectionData(pId){let nums=[],rated=0,met=0,byD=domains.map(()=>[]);students.forEach(s=>indicators.forEach(i=>{const v=getVal(s.id,pId,i.id);if(v!=null){nums.push(v);rated++;if(v>=3)met++;byD[i.domain_id-1].push(v);}}));return{count:students.length,rated,coverage:students.length*indicators.length?100*rated/(students.length*indicators.length):null,mean:av(nums),meetingPct:rated?100*met/rated:null,byDomain:byD.map(av)}}
 async function login(e){e.preventDefault();if(!db){$('error').textContent='Supabase library could not load. Check your internet connection.';return;}
-const email=$('email').value.trim().toLowerCase();const allowedEmails=['giselsantiagoupsteacher@gmail.com','reginaoracion.upsteacher@gmail.com','leeannsisonupstecher@gmail.com','joshua.aguinaldo.upsteacher@gmail.com'];if(!allowedEmails.includes(email)){$('error').textContent='This email is not authorized for the KG tracker.';return;}$('error').textContent='';$('loginButton').disabled=true;
-try{if($('otpWrap').classList.contains('hidden')){
- await check(await db.auth.signInWithOtp({email,options:{shouldCreateUser:false}}));
- $('otpWrap').classList.remove('hidden');$('loginButton').textContent='Verify and open tracker';$('error').textContent='Code requested. Check your email; mail delivery must be configured for the school accounts.';
- }else{await check(await db.auth.verifyOtp({email,token:$('otp').value.trim(),type:'email'}));await bootstrap();}
-}catch(err){$('error').textContent=err.message||'Sign-in failed';}finally{$('loginButton').disabled=false;}}
+const email=$('email').value.trim().toLowerCase();
+const allowedEmails=['giselsantiagoupsteacher@gmail.com','reginaoracion.upsteacher@gmail.com','leeannsisonupstecher@gmail.com','joshua.aguinaldo.upsteacher@gmail.com'];
+if(!allowedEmails.includes(email)){$('error').textContent='This email is not authorized for the KG tracker.';return;}
+$('error').textContent='';$('loginButton').disabled=true;
+try{await check(await db.auth.signInWithPassword({email,password:$('password').value}));$('password').value='';await bootstrap();}
+catch(err){$('error').textContent=err.message||'Sign-in failed';}finally{$('loginButton').disabled=false;}}
+async function changeInitialPassword(e){e.preventDefault();
+const password=$('newPassword').value,confirm=$('confirmPassword').value;
+if(password.length<4){$('passwordChangeError').textContent='Use at least four characters.';return;}
+if(password!==confirm){$('passwordChangeError').textContent='Passwords do not match.';return;}
+if(password==='ups123'){$('passwordChangeError').textContent='Choose a password different from the temporary password.';return;}
+$('changePasswordButton').disabled=true;$('passwordChangeError').textContent='';
+try{await check(await db.auth.updateUser({password}));await check(await db.rpc('kg_confirm_password_changed'));$('passwordChange').classList.add('hidden');await bootstrap();}
+catch(err){$('passwordChangeError').textContent=err.message||'Could not update password';}
+finally{$('changePasswordButton').disabled=false;}}
 async function bootstrap(){if(!db)return; const {data:{user:u}}=await db.auth.getUser();if(!u)return;
 try{
- const p=check(await db.from('kg_staff').select('user_id,email,display_name,role,active').eq('user_id',u.id).maybeSingle());
+ const p=check(await db.from('kg_staff').select('user_id,email,display_name,role,active,must_change_password').eq('user_id',u.id).maybeSingle());
  if(!p||!p.active)throw new Error('This email is not approved for the KG tracker. Contact the administrator.');
  user=u;profile=p;
+ if(p.must_change_password){$('login').classList.add('hidden');$('app').classList.add('hidden');$('passwordChange').classList.remove('hidden');return;}
+ $('passwordChange').classList.add('hidden');
  const allSections=check(await db.from('kg_sections').select('id,level,name,academic_year_id').order('level').order('name'));
  sections=allSections;
  if(!sections.length)throw new Error('No assigned KG sections were found.');
@@ -398,7 +418,7 @@ function downloadCsv(filename,rows){const csv=rows.map(r=>r.map(v=>{let s=String
 function exportGrid(){if(!currentSection)return;const pId=periodId(),hdr=['Learner',...indicators.map(i=>i.code+' '+i.title),'Monthly mean'];const rows=[hdr,...students.map(s=>[s.name,...indicators.map(i=>getVal(s.id,pId,i.id)??''),fmt(av(valuesFor(s.id,pId)))])];downloadCsv('UPS_KG_'+currentSection.level+'_'+currentSection.name+'_'+(per()?.label||'month')+'_scores.csv',rows);}
 function exportSummary(){const d=sectionData(periodId());downloadCsv('UPS_KG_'+currentSection.level+'_'+currentSection.name+'_'+(per()?.label||'month')+'_summary.csv',[['Class',currentSection.level+' '+currentSection.name],['Period',per()?.label],['Learners',d.count],['Ratings',d.rated],['Coverage %',fmt(d.coverage)],['Observed mean',fmt(d.mean)],['Meeting/Extending %',fmt(d.meetingPct)],[],['Domain','Mean'],...domains.map((dom,i)=>[dom.name,fmt(d.byDomain[i])])]);}
 async function submitClass(){if(!confirm('Submit all draft student assessments for this month? Teachers will not be able to edit them after submission.'))return;const pId=periodId();let count=0;try{for(const st of students){const a=assessments[st.enrollment_id+'|'+pId];if(a?.status!=='draft')continue;const next=check(await db.from('kg_assessments').update({status:'submitted',submitted_at:new Date().toISOString()}).eq('id',a.id).select('id,status,enrollment_id,period_id').single());assessments[st.enrollment_id+'|'+pId]=next;count++;}$('submitMsg').textContent=count+' assessments submitted.';render();}catch(err){$('submitMsg').textContent='Submission stopped: '+err.message;}}
-$('loginform').addEventListener('submit',login);$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('section').onchange=loadSection;$('month').onchange=render;$('studentSelect').onchange=renderStudent;$('exportGrid').onclick=exportGrid;$('exportSummary').onclick=exportSummary;$('printBtn').onclick=()=>window.print();$('submitAll').onclick=submitClass;
+$('loginform').addEventListener('submit',login);$('changePasswordForm').addEventListener('submit',changeInitialPassword);$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('section').onchange=loadSection;$('month').onchange=render;$('studentSelect').onchange=renderStudent;$('exportGrid').onclick=exportGrid;$('exportSummary').onclick=exportSummary;$('printBtn').onclick=()=>window.print();$('submitAll').onclick=submitClass;
 if(db)db.auth.getSession().then(({data})=>{if(data.session)bootstrap();}).catch(e=>$('error').textContent=e.message);
 </script>
 </body></html>
