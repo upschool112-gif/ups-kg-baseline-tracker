@@ -214,7 +214,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
         </div>
         <div>
           <label class="label">Assessment control</label>
-          <button id="clear" class="danger" style="width:100%">Clear month (demo only)</button>
+          <button id="refreshScores" class="ghost" style="width:100%">Reload saved ratings</button>
         </div>
         <div>
           <label class="label">Export scores</label>
@@ -365,7 +365,7 @@ try{
  $('userRole').textContent=profile.role==='super_admin'?'Super Admin · All KG Sections':profile.role==='supervisor'?'Supervisor · All KG Sections':'Teacher · Assigned KG Section';
  setopts($('section'),sections,s=>s.level+' '+s.name,s=>s.id);
  $('admin').classList.toggle('hidden',profile.role==='teacher');
- $('clear').disabled=true;
+
  await loadSection();
 }catch(err){$('error').textContent=err.message||String(err);$('app').classList.add('hidden');$('login').classList.remove('hidden');}}
 async function loadSection(){const token=++loadToken,statusId=$('section').value; currentSection=sections.find(s=>s.id===statusId);if(!currentSection)return;
@@ -418,7 +418,7 @@ function downloadCsv(filename,rows){const csv=rows.map(r=>r.map(v=>{let s=String
 function exportGrid(){if(!currentSection)return;const pId=periodId(),hdr=['Learner',...indicators.map(i=>i.code+' '+i.title),'Monthly mean'];const rows=[hdr,...students.map(s=>[s.name,...indicators.map(i=>getVal(s.id,pId,i.id)??''),fmt(av(valuesFor(s.id,pId)))])];downloadCsv('UPS_KG_'+currentSection.level+'_'+currentSection.name+'_'+(per()?.label||'month')+'_scores.csv',rows);}
 function exportSummary(){const d=sectionData(periodId());downloadCsv('UPS_KG_'+currentSection.level+'_'+currentSection.name+'_'+(per()?.label||'month')+'_summary.csv',[['Class',currentSection.level+' '+currentSection.name],['Period',per()?.label],['Learners',d.count],['Ratings',d.rated],['Coverage %',fmt(d.coverage)],['Observed mean',fmt(d.mean)],['Meeting/Extending %',fmt(d.meetingPct)],[],['Domain','Mean'],...domains.map((dom,i)=>[dom.name,fmt(d.byDomain[i])])]);}
 async function submitClass(){if(!confirm('Submit all draft student assessments for this month? Teachers will not be able to edit them after submission.'))return;const pId=periodId();let count=0;try{for(const st of students){const a=assessments[st.enrollment_id+'|'+pId];if(a?.status!=='draft')continue;const next=check(await db.from('kg_assessments').update({status:'submitted',submitted_at:new Date().toISOString()}).eq('id',a.id).select('id,status,enrollment_id,period_id').single());assessments[st.enrollment_id+'|'+pId]=next;count++;}$('submitMsg').textContent=count+' assessments submitted.';render();}catch(err){$('submitMsg').textContent='Submission stopped: '+err.message;}}
-$('loginform').addEventListener('submit',login);$('changePasswordForm').addEventListener('submit',changeInitialPassword);$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('section').onchange=loadSection;$('month').onchange=render;$('studentSelect').onchange=renderStudent;$('exportGrid').onclick=exportGrid;$('exportSummary').onclick=exportSummary;$('printBtn').onclick=()=>window.print();$('submitAll').onclick=submitClass;
+$('loginform').addEventListener('submit',login);$('changePasswordForm').addEventListener('submit',changeInitialPassword);$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('refreshScores').onclick=loadSection;$('section').onchange=loadSection;$('month').onchange=render;$('studentSelect').onchange=renderStudent;$('exportGrid').onclick=exportGrid;$('exportSummary').onclick=exportSummary;$('printBtn').onclick=()=>window.print();$('submitAll').onclick=submitClass;
 if(db)db.auth.getSession().then(({data})=>{if(data.session)bootstrap();}).catch(e=>$('error').textContent=e.message);
 </script>
 </body></html>
