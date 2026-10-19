@@ -347,7 +347,7 @@ if(password.length<4){$('passwordChangeError').textContent='Use at least four ch
 if(password!==confirm){$('passwordChangeError').textContent='Passwords do not match.';return;}
 if(password==='ups123'){$('passwordChangeError').textContent='Choose a password different from the temporary password.';return;}
 $('changePasswordButton').disabled=true;$('passwordChangeError').textContent='';
-try{await check(await db.auth.updateUser({password}));await check(await db.rpc('kg_confirm_password_changed'));$('passwordChange').classList.add('hidden');await bootstrap();}
+try{await check(await db.auth.updateUser({password}));$('passwordChange').classList.add('hidden');await bootstrap();}
 catch(err){$('passwordChangeError').textContent=err.message||'Could not update password';}
 finally{$('changePasswordButton').disabled=false;}}
 async function bootstrap(){if(!db)return; const {data:{user:u}}=await db.auth.getUser();if(!u)return;
