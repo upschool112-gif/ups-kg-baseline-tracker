@@ -386,6 +386,7 @@ status('Loading class...');try{
  setopts($('studentReportMonth'),compatible,x=>(x.kind==='baseline'?'Initial Baseline':x.label),x=>x.id);
  if(profile?.role!=='teacher')setopts($('adminReviewMonth'),compatible,x=>(x.kind==='baseline'?'Initial Baseline':x.label),x=>x.id);
  const open=compatible.find(x=>x.kind==='monthly'&&x.status==='open')||compatible.find(x=>x.status==='open');if(compatible.some(x=>x.id===previousPeriod))$('month').value=previousPeriod;else if(open)$('month').value=open.id;
+ if(profile?.role!=='teacher')$('adminReviewMonth').value=$('month').value;
  setopts($('studentSelect'),students,s=>s.name,s=>s.id);if(students.some(x=>x.id===previousStudent))$('studentSelect').value=previousStudent;
  assessments={};ratings={};
  const eids=students.map(s=>s.enrollment_id);
