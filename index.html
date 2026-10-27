@@ -381,7 +381,7 @@ status('Loading class...');try{
  if(token!==loadToken)return;
  students=ens.map(e=>({id:e.student_id,enrollment_id:e.id,name:e.kg_students?.full_name||'Unnamed learner'})).sort((a,b)=>a.name.localeCompare(b.name));indicators=inds;
  const compatible=periods.filter(x=>x.academic_year_id===currentSection.academic_year_id);
- setopts($('month'),compatible,x=>(x.kind==='baseline'?'Initial Baseline':x.label)+' · '+x.status,x=>x.id);
+ setopts($('month'),compatible,x=>(x.kind==='baseline'?'Initial Baseline':x.label),x=>x.id);
  setopts($('classReportMonth'),compatible,x=>(x.kind==='baseline'?'Initial Baseline':x.label),x=>x.id);
  setopts($('studentReportMonth'),compatible,x=>(x.kind==='baseline'?'Initial Baseline':x.label),x=>x.id);
  if(profile?.role!=='teacher')setopts($('adminReviewMonth'),compatible,x=>(x.kind==='baseline'?'Initial Baseline':x.label),x=>x.id);
